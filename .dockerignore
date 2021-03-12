@@ -1,0 +1,4 @@
+finance.db
+.idea/
+venv/
+*pyc
