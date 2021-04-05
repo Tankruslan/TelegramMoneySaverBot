@@ -27,8 +27,7 @@ class Categories:
         """ Fill categories with its aliases """
         filled_categories = []
         for index, category in enumerate(categories):
-            aliases = [alias for alias in category["aliases"].split(",") if alias]
-            aliases = [alias.strip() for alias in aliases]
+            aliases = [alias.strip() for alias in category["aliases"].split(",") if alias]
             aliases.append(category["name"])
             filled_categories.append(
                 Category(

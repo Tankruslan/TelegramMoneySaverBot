@@ -2,11 +2,13 @@ import os
 import logging
 
 from aiogram import Bot, Dispatcher, executor, types
+from aiogram.dispatcher.filters import Text
 
 import exceptions
 import expenses
 from categories import Categories
 from middlewares import AccessMiddleware
+from keyboards import menu
 
 
 logging.basicConfig(level=logging.INFO)
@@ -19,47 +21,50 @@ dp = Dispatcher(bot)
 dp.middleware.setup(AccessMiddleware(ACCESS_ID))
 
 
-@dp.message_handler(commands=['start', 'help'])
+@dp.message_handler(Text(equals=['Help', '/start', '/help']))
 async def send_welcome(message: types.Message):
     await message.answer(
         "Financial accounting bot\n\n"
-        "Add expense (example): 12 taxi\n"
-        "Today's statistics: /today\n"
-        "Statistics for current month: /month\n"
-        "Last expenses: /expenses\n"
-        "Expense categories: /categories")
+        "To add expense write: 12 taxi\n"
+        "To delete expense write: /del2",
+        reply_markup=menu
+    )
 
 
-@dp.message_handler(lambda message: message.text.startswith('/del'))
+@dp.message_handler(Text(startswith='/del'))
 async def del_expense(message: types.Message):
-    row_id = int(message.text[4:])
-    expenses.delete_expense(row_id)
-    answer_message = 'The transaction was deleted'
+    try:
+        row_id = int(message.text[4:])
+        expenses.delete_expense(row_id)
+        answer_message = 'The transaction was deleted'
+    except ValueError:
+        answer_message = f'Enter valid command in format:\n/del<expense_id>'
+    except exceptions.NotCorrectMessage as e:
+        answer_message = str(e)
     await message.answer(answer_message)
 
 
-@dp.message_handler(commands=['categories'])
+@dp.message_handler(Text(equals='Categories'))
 async def get_category_list(message: types.Message):
     categories = Categories().get_all_categories()
-    print(list(c.aliases for c in categories))
     answer_message = 'Expense categories:\n\n* ' + \
         ('\n* '.join(c.name+' ('+', '.join(c.aliases)+')' for c in categories))
     await message.answer(answer_message)
 
 
-@dp.message_handler(commands=['today'])
+@dp.message_handler(Text(equals="Today's statistics"))
 async def get_today_statistics(message: types.Message):
     answer_message = expenses.get_today_statistics()
     await message.answer(answer_message)
 
 
-@dp.message_handler(commands=['month'])
+@dp.message_handler(Text(equals='Monthly statistics'))
 async def get_month_statistics(message: types.Message):
     answer_message = expenses.get_month_statistics()
     await message.answer(answer_message)
 
 
-@dp.message_handler(commands=['expenses'])
+@dp.message_handler(Text(equals='Last expenses'))
 async def get_last_expenses(message: types.Message):
     last_expenses = expenses.get_last_transactions()
     if not last_expenses:

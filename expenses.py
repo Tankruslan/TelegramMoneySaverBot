@@ -1,6 +1,7 @@
 import os
 import re
 import datetime
+import sqlite3
 from typing import List, NamedTuple, Optional
 
 import pytz
@@ -92,7 +93,12 @@ def get_last_transactions(quantity: int = 10) -> List[Expense]:
 
 
 def delete_expense(row_id: int) -> None:
-    db.delete("expense", row_id)
+    try:
+        db.delete("expense", row_id)
+    except sqlite3.ProgrammingError:
+        raise exceptions.NotCorrectMessage(
+            f'Expense with ({row_id}) ID does not exist'
+        )
 
 
 def _parse_message(raw_message: str) -> Message:

@@ -50,6 +50,10 @@ def fetchone(table: str, columns: List[str]) -> Dict:
 
 def delete(table: str, row_id: int) -> None:
     row_id = int(row_id)
+    cursor.execute(f"SELECT count(*) FROM {table} WHERE id={row_id}")
+    row = cursor.fetchone()
+    if row[0] < 1:
+        raise sqlite3.ProgrammingError
     cursor.execute(f"DELETE FROM {table} WHERE id={row_id}")
     conn.commit()
 
