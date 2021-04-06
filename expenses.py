@@ -1,10 +1,10 @@
-import os
 import re
 import datetime
 import sqlite3
 from typing import List, NamedTuple, Optional
 
 import pytz
+from decouple import config
 
 import db
 import exceptions
@@ -48,44 +48,40 @@ def get_today_statistics() -> str:
     all_today_expenses = result[0]
     cursor.execute("SELECT SUM(amount) "
                    "FROM expense WHERE date(created)=date('now', 'localtime') "
-                   "AND category_name IN (SELECT name "
-                   "FROM category WHERE is_primary_expense=true)")
+                   "AND category_name IN "
+                   "(SELECT name FROM category WHERE is_primary_expense=true)")
     result = cursor.fetchone()
     primary_today_expenses = result[0] if result[0] else 0
     return (f"Today's expenses:\n"
             f"total — {all_today_expenses} $\n"
-            f"primary — {primary_today_expenses} $ / {_get_daily_limit()} $\n\n"
-            f"For current month: /month")
+            f"primary — {primary_today_expenses} $ / {_get_daily_limit()} $")
 
 
 def get_month_statistics() -> str:
-    now = _get_now_datetime()
-    first_day_of_month = f'{now.year:04d}-{now.month:02d}-01'
+    now_datetime = _get_now_datetime()
     cursor = db.get_cursor()
     cursor.execute(f"SELECT SUM(amount) "
-                   f"FROM expense WHERE date(created) >= '{first_day_of_month}'")
+                   f"FROM expense WHERE date(created) >= date('now', 'start of month')")
     result = cursor.fetchone()
     if not result[0]:
         return "No expenses yet this month"
     all_month_expenses = result[0]
     cursor.execute(f"SELECT SUM(amount) "
-                   f"FROM expense WHERE date(created) >= '{first_day_of_month}' "
-                   f"AND category_name IN (SELECT name "
-                   f"FROM category WHERE is_primary_expense=true)")
+                   f"FROM expense WHERE date(created) >= date('now', 'start of month') "
+                   f"AND category_name IN "
+                   f"(SELECT name FROM category WHERE is_primary_expense=true)")
     result = cursor.fetchone()
     primary_month_expenses = result[0] if result[0] else 0
     return (f"Current month expenses:\n"
             f"total — {all_month_expenses} $\n"
             f"primary — {primary_month_expenses} $ / "
-            f"{now.day * _get_daily_limit()} $")
+            f"{now_datetime.day * _get_daily_limit()} $")
 
 
 def get_last_transactions(quantity: int = 10) -> List[Expense]:
     cursor = db.get_cursor()
     cursor.execute(
-        f"SELECT e.id, e.amount, c.name "
-        f"FROM expense AS e LEFT JOIN category AS c "
-        f"ON c.name=e.category_name "
+        f"SELECT id, amount, category_name FROM expense "
         f"ORDER BY created DESC LIMIT {quantity}")
     rows = cursor.fetchall()
     last_expenses = [Expense(id=row[0], amount=row[1], category_name=row[2]) for row in rows]
@@ -118,7 +114,7 @@ def _get_now_formatted() -> str:
 
 
 def _get_now_datetime() -> datetime.datetime:
-    tz = pytz.timezone(os.getenv("TZ", "Asia/Tashkent"))
+    tz = pytz.timezone(config("TZ"))
     now = datetime.datetime.now(tz)
     return now
 

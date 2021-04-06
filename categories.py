@@ -26,7 +26,7 @@ class Categories:
     def _fill_aliases(categories: List[Dict]) -> List[Category]:
         """ Fill categories with its aliases """
         filled_categories = []
-        for index, category in enumerate(categories):
+        for category in categories:
             aliases = [alias.strip() for alias in category["aliases"].split(",") if alias]
             aliases.append(category["name"])
             filled_categories.append(
@@ -43,14 +43,11 @@ class Categories:
 
     def get_category(self, category_name: str) -> Category:
         """ Get category by its alias """
-        found = None
-        other_category = None
+        found_category = None
         for category in self._categories:
             if category.name == "other":
-                other_category = category
-            for alias in category.aliases:
-                if category_name in alias:
-                    found = category
-        if not found:
-            found = other_category
-        return found
+                found_category = category
+            if category_name in category.aliases:
+                found_category = category
+                break
+        return found_category

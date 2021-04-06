@@ -4,15 +4,15 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 menu = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton('Last expenses'),
-            KeyboardButton('Categories')
+            KeyboardButton('💲 Last expenses'),
+            KeyboardButton('📋 Categories')
         ],
         [
-            KeyboardButton("Today's statistics"),
-            KeyboardButton('Monthly statistics')
+            KeyboardButton("📈 Today's statistics"),
+            KeyboardButton('📉 Monthly statistics')
         ],
         [
-            KeyboardButton('Help')
+            KeyboardButton('❓ Help')
         ]
     ],
     resize_keyboard=True

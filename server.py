@@ -1,8 +1,8 @@
-import os
 import logging
 
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.dispatcher.filters import Text
+from decouple import config
 
 import exceptions
 import expenses
@@ -13,15 +13,16 @@ from keyboards import menu
 
 logging.basicConfig(level=logging.INFO)
 
-API_TOKEN = os.getenv('TELEGRAM_API_TOKEN')
-ACCESS_ID = int(os.getenv('TELEGRAM_ACCESS_ID'))
+API_TOKEN = config('TELEGRAM_API_TOKEN')
+ACCESS_ID = config('TELEGRAM_ACCESS_ID', cast=int)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 dp.middleware.setup(AccessMiddleware(ACCESS_ID))
 
 
-@dp.message_handler(Text(equals=['Help', '/start', '/help']))
+@dp.message_handler(commands=['start', 'help'])
+@dp.message_handler(Text(contains='Help'))
 async def send_welcome(message: types.Message):
     await message.answer(
         "Financial accounting bot\n\n"
@@ -44,7 +45,7 @@ async def del_expense(message: types.Message):
     await message.answer(answer_message)
 
 
-@dp.message_handler(Text(equals='Categories'))
+@dp.message_handler(Text(contains='Categories'))
 async def get_category_list(message: types.Message):
     categories = Categories().get_all_categories()
     answer_message = 'Expense categories:\n\n* ' + \
@@ -52,19 +53,19 @@ async def get_category_list(message: types.Message):
     await message.answer(answer_message)
 
 
-@dp.message_handler(Text(equals="Today's statistics"))
+@dp.message_handler(Text(contains="Today's statistics"))
 async def get_today_statistics(message: types.Message):
     answer_message = expenses.get_today_statistics()
     await message.answer(answer_message)
 
 
-@dp.message_handler(Text(equals='Monthly statistics'))
+@dp.message_handler(Text(contains='Monthly statistics'))
 async def get_month_statistics(message: types.Message):
     answer_message = expenses.get_month_statistics()
     await message.answer(answer_message)
 
 
-@dp.message_handler(Text(equals='Last expenses'))
+@dp.message_handler(Text(contains='Last expenses'))
 async def get_last_expenses(message: types.Message):
     last_expenses = expenses.get_last_transactions()
     if not last_expenses:
